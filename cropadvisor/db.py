@@ -1,4 +1,8 @@
-"""SQLite access: one connection per request, schema creation and seeding."""
+"""Database access: one connection per request, schema creation and seeding.
+
+Local runs use a SQLite file. When TURSO_DATABASE_URL is configured (the
+hosted deployment), all instances share one Turso database instead.
+"""
 import os
 import sqlite3
 
@@ -7,6 +11,7 @@ from flask import current_app, g
 from werkzeug.security import generate_password_hash
 
 from .seed import CROPS, SOIL_TYPES, DEMO_ADMIN, DEMO_FARMER
+from .turso import TursoConnection
 
 
 class DatabaseUnavailable(Exception):
@@ -14,6 +19,8 @@ class DatabaseUnavailable(Exception):
 
 
 def get_db():
+    if "db" not in g and current_app.config.get("TURSO_DATABASE_URL"):
+        g.db = TursoConnection(current_app.config["TURSO_DATABASE_URL"], current_app.config["TURSO_AUTH_TOKEN"])
     if "db" not in g:
         path = current_app.config["DATABASE"]
         try:
@@ -48,15 +55,16 @@ def init_db(seed=True):
 
 
 def seed_db(db):
+    # OR IGNORE: on the hosted deployment several instances may seed at the same moment.
     if db.execute("SELECT COUNT(*) FROM soil_types").fetchone()[0] == 0:
         db.executemany(
-            "INSERT INTO soil_types (name, description, typical_n, typical_p, typical_k, typical_ph, drainage)"
+            "INSERT OR IGNORE INTO soil_types (name, description, typical_n, typical_p, typical_k, typical_ph, drainage)"
             " VALUES (:name, :description, :n, :p, :k, :ph, :drainage)",
             SOIL_TYPES,
         )
     if db.execute("SELECT COUNT(*) FROM crops").fetchone()[0] == 0:
         db.executemany(
-            """INSERT INTO crops (crop_name, category, seasons, soil_category, optimal_temp, temp_tolerance,
+            """INSERT OR IGNORE INTO crops (crop_name, category, seasons, soil_category, optimal_temp, temp_tolerance,
                    min_rainfall, max_rainfall, humidity_min, humidity_max, n_min, n_max, p_min, p_max,
                    k_min, k_max, ph_min, ph_max, water_need, duration_days, guidance)
                VALUES (:name, :category, :seasons, :soils, :temp, :tol, :rain_min, :rain_max, :hum_min,
@@ -66,12 +74,12 @@ def seed_db(db):
         )
     if db.execute("SELECT COUNT(*) FROM admins").fetchone()[0] == 0:
         db.execute(
-            "INSERT INTO admins (username, name, password_hash) VALUES (?, ?, ?)",
+            "INSERT OR IGNORE INTO admins (username, name, password_hash) VALUES (?, ?, ?)",
             (DEMO_ADMIN["username"], DEMO_ADMIN["name"], generate_password_hash(DEMO_ADMIN["password"])),
         )
     if db.execute("SELECT COUNT(*) FROM farmers").fetchone()[0] == 0:
         db.execute(
-            "INSERT INTO farmers (name, location, contact_no, password_hash) VALUES (?, ?, ?, ?)",
+            "INSERT OR IGNORE INTO farmers (name, location, contact_no, password_hash) VALUES (?, ?, ?, ?)",
             (DEMO_FARMER["name"], DEMO_FARMER["location"], DEMO_FARMER["contact_no"],
              generate_password_hash(DEMO_FARMER["password"])),
         )
@@ -81,8 +89,8 @@ def seed_db(db):
 @click.option("--reset", is_flag=True, help="Delete the existing database first.")
 def init_db_command(reset):
     """Create tables and load reference data."""
-    path = current_app.config["DATABASE"]
-    if reset and os.path.exists(path):
+    path = current_app.config["TURSO_DATABASE_URL"] or current_app.config["DATABASE"]
+    if reset and not current_app.config["TURSO_DATABASE_URL"] and os.path.exists(path):
         close_db()
         os.remove(path)
     init_db()

@@ -11,6 +11,7 @@ from flask import Flask, render_template
 
 from . import db as database
 from .security import init_security
+from .turso import TursoUnavailable
 from .services.recommender import retrain
 
 
@@ -85,6 +86,7 @@ def _register_error_handlers(app):
                                message="Soil reports must be smaller than 512 KB."), 413
 
     @app.errorhandler(database.DatabaseUnavailable)
+    @app.errorhandler(TursoUnavailable)
     @app.errorhandler(sqlite3.OperationalError)
     def db_down(exc):
         log.error("Database error: %s", type(exc).__name__)

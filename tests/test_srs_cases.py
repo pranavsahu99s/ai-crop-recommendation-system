@@ -13,6 +13,7 @@ import sqlite3
 import tempfile
 import time
 import unittest
+from unittest import mock
 
 from cropadvisor import create_app
 from cropadvisor.db import get_db
@@ -484,7 +485,9 @@ class Module4Security(BaseCase):
         saved = recommender.model._classes
         recommender.model._classes = {}
         try:
-            r = self.recommend()
+            # Training also fails, so the model stays unavailable for this request.
+            with mock.patch.object(recommender.model, "train", lambda *a, **k: None):
+                r = self.recommend()
         finally:
             recommender.model._classes = saved
         self.assertIn(b"unavailable", self.client.get(r.headers["Location"]).data)

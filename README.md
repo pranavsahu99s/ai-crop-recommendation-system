@@ -31,15 +31,25 @@ The database (`instance/cropadvisor.db`) is created and seeded on first start. T
 Optional environment variables: `CROPADVISOR_SECRET_KEY` (set this for any shared deployment),
 `SESSION_MINUTES` (default 30), `CONFIDENCE_THRESHOLD` (default 0.40), `WEATHER_TIMEOUT`.
 
-## Deployment (Vercel)
+## Deployment (Vercel + Turso)
 
-Vercel serves the Flask `app` object from `app.py` directly; there is no extra configuration file. Set
-`CROPADVISOR_SECRET_KEY` as an environment variable in the Vercel project.
+Vercel serves the Flask `app` object from `app.py` directly; there is no extra configuration file.
 
-Vercel functions have no persistent disk. The SQLite database lives in `/tmp`, is seeded on start, and is
-reset whenever Vercel recycles the instance. Different instances also don't share data. The demo
-accounts always work, but newly registered accounts and saved plots are temporary on the hosted demo. For
-permanent storage, point the app at a hosted database such as Turso or Postgres.
+On Vercel, requests are spread across several short-lived server instances, so a local SQLite file can't
+be shared between them. The hosted app therefore uses **Turso**, a hosted database with the same SQLite
+dialect. Locally nothing changes: without Turso settings the app uses `instance/cropadvisor.db`.
+
+Environment variables for the Vercel project:
+
+| Variable | Purpose |
+|---|---|
+| `CROPADVISOR_SECRET_KEY` | Signs session cookies; any long random string |
+| `TURSO_DATABASE_URL` | e.g. `libsql://cropadvisor-db-<org>.turso.io` |
+| `TURSO_AUTH_TOKEN` | Turso database token |
+
+`cropadvisor/turso.py` talks to Turso over its HTTP API using `requests`, so no extra package is needed.
+The tables and reference data are created automatically on the first request. Each instance checks
+whether the crop data has changed and retrains its copy of the model if so.
 
 ## Run the tests
 
@@ -47,7 +57,8 @@ permanent storage, point the app at a hosted database such as Turso or Postgres.
 python -m unittest discover -s tests -t . -v
 ```
 
-`tests/test_srs_cases.py` automates all 52 test cases from SRS Lab 10. Each test method starts with its ID
+`tests/test_turso_adapter.py` runs the main workflow through the Turso connection against a simulated
+Turso server. `tests/test_srs_cases.py` automates all 52 test cases from SRS Lab 10. Each test method starts with its ID
 (`test_tc01_…` to `test_tc52_…`), plus 3 supporting checks. The Weather API is stubbed, so the tests run
 offline and can simulate an unknown place, an outage and rate limiting.
 
@@ -65,6 +76,7 @@ farmer_project_SE/
 │   ├── schema.sql              tables from the ER diagram (Lab 9)
 │   ├── seed.py                 15 crops, 7 soil types, demo accounts
 │   ├── db.py                   connection per request, init/seed, `flask init-db`
+│   ├── turso.py                Turso (hosted SQLite) connection for the Vercel deployment
 │   ├── domain.py               Farmer, FarmDetails, WeatherData, Crop, CropRecommendation (Lab 8)
 │   ├── security.py             role guards, CSRF tokens, session expiry, security headers
 │   ├── auth.py                 register / login / logout
@@ -79,7 +91,7 @@ farmer_project_SE/
 │   │   └── pdf.py              small dependency-free PDF writer
 │   ├── templates/              auth/, farmer/, admin/, errors/
 │   └── static/                 css/app.css, js/app.js, samples/soil_report_sample.csv
-├── tests/test_srs_cases.py     TC-01 … TC-52
+├── tests/                      test_srs_cases.py (TC-01 … TC-52), test_turso_adapter.py
 └── previous_version_backup.tar.gz   the earlier version of the project
 ```
 

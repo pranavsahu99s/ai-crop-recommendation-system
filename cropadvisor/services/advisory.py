@@ -9,7 +9,7 @@ import json
 from flask import current_app
 
 from ..domain import Crop, CropRecommendation, FarmDetails, WeatherData
-from .recommender import ModelUnavailable, model
+from .recommender import ModelUnavailable, model, retrain
 from .weather import WeatherError, WeatherService
 
 
@@ -70,6 +70,7 @@ def generate_recommendation(db, farmer_id, plot: FarmDetails):
     missing = plot.missing_for_recommendation()
     if missing:
         raise IncompleteInput(missing)
+    retrain(db, force=False)
     if not model.is_trained:
         raise ModelUnavailable("The recommendation model is not available.")
 

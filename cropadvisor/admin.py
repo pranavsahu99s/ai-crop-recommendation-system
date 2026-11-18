@@ -23,6 +23,7 @@ def _actor():
 @admin_required
 def overview():
     db = get_db()
+    retrain(db, force=False)
     one = lambda sql, *a: db.execute(sql, a).fetchone()[0]  # noqa: E731
     stats = {
         "farmers": one("SELECT COUNT(*) FROM farmers"),

@@ -21,6 +21,7 @@ Model
     the top score is the confidence (always between 0 and 1, TC-26); unusual
     inputs give a low confidence instead of a false strong result (TC-27).
 """
+import hashlib
 import math
 import random
 import threading
@@ -80,6 +81,7 @@ class RecommendationModel:
         self.model_version = None
         self.trained_dataset = None
         self.trained_at = None
+        self.data_signature = None
         self._classes = {}
 
     @property
@@ -175,10 +177,19 @@ class RecommendationModel:
 model = RecommendationModel()
 
 
-def retrain(db):
-    """Load crop and soil reference data from the database and retrain the shared model."""
+def retrain(db, force=True):
+    """Train the shared model from crop and soil reference data in the database.
+
+    With force=False, training is skipped when the data is unchanged since the
+    last training. On the hosted deployment several server instances share one
+    database, so each instance calls this before predicting to pick up crop
+    edits made through another instance.
+    """
     from ..seed import SEASONS
-    crops = [Crop.from_row(r) for r in db.execute("SELECT * FROM crops").fetchall()]
+    crop_rows = db.execute("SELECT * FROM crops ORDER BY crop_id").fetchall()
     soils = [r["name"] for r in db.execute("SELECT name FROM soil_types ORDER BY name").fetchall()]
-    model.train(crops, SEASONS, soils)
+    signature = hashlib.sha256(repr(([tuple(r) for r in crop_rows], soils)).encode()).hexdigest()
+    if force or signature != model.data_signature or not model.is_trained:
+        model.train([Crop.from_row(r) for r in crop_rows], SEASONS, soils)
+        model.data_signature = signature
     return model

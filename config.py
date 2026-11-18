@@ -15,6 +15,10 @@ class Config:
     DATABASE = os.environ.get("CROPADVISOR_DB") or (
         "/tmp/cropadvisor.db" if os.environ.get("VERCEL") else os.path.join(BASE_DIR, "instance", "cropadvisor.db"))
 
+    # Shared hosted database (Turso). When set, it replaces the local SQLite file.
+    TURSO_DATABASE_URL = os.environ.get("TURSO_DATABASE_URL", "")
+    TURSO_AUTH_TOKEN = os.environ.get("TURSO_AUTH_TOKEN", "")
+
     # Sessions expire after 30 minutes of inactivity (TC-43).
     PERMANENT_SESSION_LIFETIME = timedelta(minutes=int(os.environ.get("SESSION_MINUTES", 30)))
     SESSION_COOKIE_HTTPONLY = True
@@ -37,3 +41,4 @@ class TestConfig(Config):
     TESTING = True
     SECRET_KEY = "test-secret"
     WEATHER_ENABLED = False
+    TURSO_DATABASE_URL = ""
