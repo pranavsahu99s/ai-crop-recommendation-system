@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% from "_forms.html" import meter %}
+{% set top = rec.top %}
+{% block title %}Recommendation #{{ rec.rec_id }}{% endblock %}
+{% block content %}
+<div class="breadcrumb no-print">
+  <a href="{{ url_for('farmer.history') }}">History</a> / Recommendation #{{ rec.rec_id }}
+</div>
+
+<div class="page-head">
+  <div>
+    <span class="eyebrow">Recommendation #{{ rec.rec_id }}</span>
+    <h1>{{ inputs.plot_name or inputs.location }}</h1>
+    <p>{{ inputs.season }} season · {{ inputs.soil_type }} soil · {{ rec.generated_date | datefmt }} IST</p>
+  </div>
+  <div class="actions no-print">
+    <a class="btn btn-primary" href="{{ url_for('farmer.download', rec_id=rec.rec_id) }}">Download PDF</a>
+    {% if plot_no %}<a class="btn btn-secondary" href="{{ url_for('farmer.farm_detail', plot_no=plot_no) }}">Back to plot</a>{% endif %}
+  </div>
+</div>
+
+{% if rec.is_low_confidence %}
+  <div class="notice warn" style="margin-bottom: 20px">
+    <strong>Low confidence</strong>
+    Your conditions do not clearly match any crop in the knowledge base. Treat the list below as a starting point
+    and check your soil values, or confirm with your local Krishi Vigyan Kendra.
+  </div>
+{% endif %}
+{% if not weather.is_live %}
+  <div class="notice warn" style="margin-bottom: 20px">
+    <strong>Weather is estimated</strong>
+    The weather service could not be reached, so typical {{ inputs.season }} values were used. Request again later for measured data.
+  </div>
+{% endif %}
+
+<div class="card">
+  <div class="result-hero">
+    <div>
+      <span class="eyebrow">Recommended crop</span>
+      <div class="crop-name">{{ top.crop.crop_name }}</div>
+      <div class="actions">
+        <span class="badge green">{{ top.crop.category }}</span>
+        <span class="badge">Water need: {{ top.crop.water_need | lower }}</span>
+        {% if top.crop.duration_days %}<span class="badge">About {{ top.crop.duration_days }} days</span>{% endif %}
+      </div>
+    </div>
+    <div class="confidence">
+      <div class="big">{{ rec.confidence_score | pct }}</div>
+      <div class="label">confidence</div>
+    </div>
+  </div>
+  {% if top.crop.guidance %}<p style="margin: 20px 0 0">{{ top.crop.guidance }}</p>{% endif %}
+</div>
+
+<div class="grid grid-2 section-gap">
+  <div class="card">
+    <div class="card-head"><h2>Ranked crops</h2></div>
+    <ol class="rank-list">
+      {% for c in rec.crops %}
+        <li>
+          <span class="rank">{{ c.rank_order }}</span>
+          <div><strong>{{ c.crop.crop_name }}</strong><div class="small faint">{{ c.crop.category }} · {{ c.crop.seasons | replace(',', ', ') }}</div></div>
+          {{ meter(c.suitability_score, '' if loop.first else 'brown') }}
+          <span class="score">{{ c.suitability_score | pct }}</span>
+        </li>
+      {% endfor %}
+    </ol>
+    <p class="small faint" style="margin: 12px 0 0">Suitability is the model's estimate of how well each crop fits these conditions compared with the others.</p>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>Why {{ top.crop.crop_name }}</h2></div>
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Factor</th><th>Your plot</th><th>Preferred</th><th></th></tr></thead>
+        <tbody>
+          {% for name, value, preferred, ok in checks %}
+          <tr>
+            <td>{{ name }}</td><td>{{ value }}</td><td class="muted">{{ preferred }}</td>
+            <td class="{{ 'check-ok' if ok else 'check-off' }}">{{ 'Fits' if ok else 'Outside' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="grid grid-2 section-gap">
+  <div class="card">
+    <h3>Farm and soil inputs</h3>
+    <dl class="kv">
+      <dt>Location</dt><dd>{{ inputs.location }}</dd>
+      <dt>Land area</dt><dd>{{ inputs.land_area | num }} acres</dd>
+      <dt>Season</dt><dd>{{ inputs.season }}</dd>
+      <dt>Soil type</dt><dd>{{ inputs.soil_type }}</dd>
+      <dt>N : P : K</dt><dd>{{ inputs.n | num }} : {{ inputs.p | num }} : {{ inputs.k | num }} kg/ha</dd>
+      <dt>pH</dt><dd>{{ inputs.ph | num }}</dd>
+    </dl>
+  </div>
+  <div class="card">
+    <h3>Weather used</h3>
+    <dl class="kv">
+      <dt>Place</dt><dd>{{ weather.location }}</dd>
+      <dt>Period</dt><dd>{{ weather.period }}</dd>
+      <dt>Mean temperature</dt><dd>{{ '%.1f' | format(weather.temperature) }} °C</dd>
+      <dt>Rainfall</dt><dd>{{ '%.0f' | format(weather.rainfall) }} mm / month</dd>
+      <dt>Humidity</dt><dd>{{ '%.0f' | format(weather.humidity) }}%</dd>
+      <dt>Source</dt><dd>{{ 'Open-Meteo archive' if weather.is_live else 'Seasonal estimate' }}</dd>
+    </dl>
+  </div>
+</div>
+<p class="small faint section-gap">Model {{ model_version or '—' }}. A recommendation is guidance, not a guarantee; local practice and market prices matter too.</p>
+{% endblock %}

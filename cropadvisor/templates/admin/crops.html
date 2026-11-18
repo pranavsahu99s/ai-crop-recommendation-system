@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% from "_forms.html" import csrf %}
+{% block title %}Crop data{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <span class="eyebrow">Administrator</span>
+    <h1>Crop data</h1>
+    <p>Reference ranges the recommendation model is trained on.</p>
+  </div>
+  <a class="btn btn-primary" href="{{ url_for('admin.crop_new') }}">Add crop</a>
+</div>
+
+<div class="card tight">
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th>Crop</th><th>Seasons</th><th>Suitable soils</th><th class="num">Opt. temp</th><th class="num">Rainfall</th><th class="num">pH</th><th class="num">Used</th><th></th></tr></thead>
+      <tbody>
+      {% for c in rows %}
+        <tr class="{{ 'dim' if not c.is_active }}">
+          <td><strong>{{ c.crop_name }}</strong><div class="small faint">{{ c.category }}{% if not c.is_active %} · inactive{% endif %}</div></td>
+          <td>{{ c.seasons | replace(',', ', ') }}</td>
+          <td>{{ c.soil_category | replace(',', ', ') }}</td>
+          <td class="num nowrap">{{ c.optimal_temp | num }} ± {{ c.temp_tolerance | num }} °C</td>
+          <td class="num nowrap">{{ c.min_rainfall | num }}–{{ c.max_rainfall | num }}</td>
+          <td class="num nowrap">{{ c.ph_min | num }}–{{ c.ph_max | num }}</td>
+          <td class="num">{{ c.used }}</td>
+          <td>
+            <div class="row-actions">
+              <a class="btn btn-ghost btn-sm" href="{{ url_for('admin.crop_edit', crop_id=c.crop_id) }}">Edit</a>
+              <form method="post" action="{{ url_for('admin.crop_toggle', crop_id=c.crop_id) }}">
+                {{ csrf() }}<button class="btn btn-ghost btn-sm" type="submit">{{ 'Deactivate' if c.is_active else 'Activate' }}</button>
+              </form>
+              {% if not c.used %}
+              <form method="post" action="{{ url_for('admin.crop_delete', crop_id=c.crop_id) }}" data-confirm="Delete {{ c.crop_name }}?">
+                {{ csrf() }}<button class="btn btn-danger btn-sm" type="submit">Delete</button>
+              </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+<p class="small faint" style="margin-top: 12px">Rainfall is mean monthly rainfall over the season, in mm. Crops used in saved recommendations can be deactivated but not deleted, so history stays complete.</p>
+{% endblock %}

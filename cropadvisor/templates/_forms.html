@@ -1,0 +1,33 @@
+{# Form helpers. `errors` is a dict of field -> message. #}
+
+{% macro csrf() %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endmacro %}
+
+{% macro field(name, label, form, errors, type='text', hint=None, optional=False, attrs={}, class='') %}
+  <div class="field {{ class }} {{ 'has-error' if errors.get(name) }}">
+    <label for="{{ name }}">{{ label }}{% if optional %} <span class="optional">(optional)</span>{% endif %}</label>
+    <input class="input" id="{{ name }}" name="{{ name }}" type="{{ type }}"
+           value="{{ form.get(name, '') if type != 'password' else '' }}"
+           {% for k, v in attrs.items() %}{{ k }}="{{ v }}" {% endfor %}
+           {% if errors.get(name) %}aria-invalid="true" aria-describedby="{{ name }}-err"{% endif %}>
+    {% if errors.get(name) %}<span class="error-text" id="{{ name }}-err">{{ errors[name] }}</span>
+    {% elif hint %}<span class="hint">{{ hint }}</span>{% endif %}
+  </div>
+{% endmacro %}
+
+{% macro select(name, label, options, form, errors, placeholder=None, hint=None, class='') %}
+  <div class="field {{ class }} {{ 'has-error' if errors.get(name) }}">
+    <label for="{{ name }}">{{ label }}</label>
+    <select class="input" id="{{ name }}" name="{{ name }}">
+      {% if placeholder %}<option value="">{{ placeholder }}</option>{% endif %}
+      {% for opt in options %}
+        <option value="{{ opt }}" {{ 'selected' if form.get(name) == opt }}>{{ opt }}</option>
+      {% endfor %}
+    </select>
+    {% if errors.get(name) %}<span class="error-text">{{ errors[name] }}</span>
+    {% elif hint %}<span class="hint">{{ hint }}</span>{% endif %}
+  </div>
+{% endmacro %}
+
+{% macro meter(value, tone='') %}
+  <div class="meter {{ tone }}" role="img" aria-label="{{ (value * 100) | round | int }} percent"><span style="width: {{ [value * 100, 1] | max }}%"></span></div>
+{% endmacro %}

@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% from "_forms.html" import csrf %}
+{% block title %}Soil data{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <span class="eyebrow">Administrator</span>
+    <h1>Soil data</h1>
+    <p>Soil types farmers can choose, with typical values used when no soil test is available.</p>
+  </div>
+  <a class="btn btn-primary" href="{{ url_for('admin.soil_new') }}">Add soil type</a>
+</div>
+
+<div class="card tight">
+  <div class="table-wrap">
+    <table class="table">
+      <thead><tr><th>Soil type</th><th>Description</th><th class="num">N</th><th class="num">P</th><th class="num">K</th><th class="num">pH</th><th>Drainage</th><th class="num">Plots</th><th></th></tr></thead>
+      <tbody>
+      {% for s in rows %}
+        <tr>
+          <td><strong>{{ s.name }}</strong></td>
+          <td class="muted small">{{ s.description or '—' }}</td>
+          <td class="num">{{ s.typical_n | num }}</td>
+          <td class="num">{{ s.typical_p | num }}</td>
+          <td class="num">{{ s.typical_k | num }}</td>
+          <td class="num">{{ s.typical_ph | num }}</td>
+          <td>{{ s.drainage }}</td>
+          <td class="num">{{ s.plots }}</td>
+          <td>
+            <div class="row-actions">
+              <a class="btn btn-ghost btn-sm" href="{{ url_for('admin.soil_edit', soil_id=s.soil_id) }}">Edit</a>
+              {% if not s.plots %}
+              <form method="post" action="{{ url_for('admin.soil_delete', soil_id=s.soil_id) }}" data-confirm="Delete soil type {{ s.name }}?">
+                {{ csrf() }}<button class="btn btn-danger btn-sm" type="submit">Delete</button>
+              </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

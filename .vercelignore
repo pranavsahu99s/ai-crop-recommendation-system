@@ -1,0 +1,6 @@
+venv/
+instance/
+tests/
+previous_version_backup.tar.gz
+SRS new final.pdf
+SRS.docx

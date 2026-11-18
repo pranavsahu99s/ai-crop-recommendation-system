@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Crop recommendations for your field{% endblock %}
+{% block content %}
+<section class="hero">
+  <div>
+    <span class="eyebrow">For farmers in India</span>
+    <h1>Choose the right crop for your soil, season and weather.</h1>
+    <p class="lede">Enter your plot's location, season and soil test values. CropAdvisor looks up the weather for
+      that place and season, and ranks the crops that suit those conditions best.</p>
+    <div class="actions">
+      <a class="btn btn-primary" href="{{ url_for('auth.register') }}">Create a farmer account</a>
+      <a class="btn btn-secondary" href="{{ url_for('auth.login') }}">Log in</a>
+    </div>
+  </div>
+  <aside class="sample-card" aria-label="Example recommendation">
+    <span class="eyebrow">Example result</span>
+    <div style="font-family: var(--serif); font-size: 1.7rem; font-weight: 700; color: var(--primary); margin: 2px 0 12px;">Wheat</div>
+    <div class="row"><span class="muted">Plot</span><span>Jaipur, 2.5 acres</span></div>
+    <div class="row"><span class="muted">Season · soil</span><span>Rabi · Loamy</span></div>
+    <div class="row"><span class="muted">N : P : K · pH</span><span>100 : 50 : 45 · 7.0</span></div>
+    <div class="row"><span class="muted">Season weather</span><span>18 °C · 8 mm/month</span></div>
+    <div class="row"><span class="muted">Also suitable</span><span>Mustard, Tomato</span></div>
+  </aside>
+</section>
+
+<section class="band">
+  <h2 style="margin-bottom: 20px">How it works</h2>
+  <ol class="steps">
+    <li><h3>Add your plot</h3><p>Location, land area and the season you plan to sow in.</p></li>
+    <li><h3>Enter soil values</h3><p>N, P, K and pH from your soil health card, or upload the report file.</p></li>
+    <li><h3>Weather is fetched</h3><p>Temperature, rainfall and humidity for your place over that season.</p></li>
+    <li><h3>Get ranked crops</h3><p>The top three crops with a confidence score. Download the report as a PDF.</p></li>
+  </ol>
+</section>
+
+<section class="band grid grid-3">
+  <div>
+    <h3>Based on your own data</h3>
+    <p class="muted">Recommendations use your soil test and the weather recorded at your location, not national averages.</p>
+  </div>
+  <div>
+    <h3>Honest about uncertainty</h3>
+    <p class="muted">If your conditions do not clearly suit any crop, the result is marked low-confidence instead of guessed.</p>
+  </div>
+  <div>
+    <h3>Kept for later</h3>
+    <p class="muted">Every recommendation is saved to your history with the inputs and weather that produced it.</p>
+  </div>
+</section>
+{% endblock %}

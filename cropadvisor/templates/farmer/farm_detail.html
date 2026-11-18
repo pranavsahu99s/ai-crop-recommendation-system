@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% from "_forms.html" import csrf %}
+{% block title %}{{ plot.plot_name or 'Plot ' ~ plot.plot_no }}{% endblock %}
+{% block content %}
+<div class="breadcrumb"><a href="{{ url_for('farmer.farms') }}">My farms</a> / {{ plot.plot_name or 'Plot ' ~ plot.plot_no }}</div>
+<div class="page-head">
+  <div>
+    <h1>{{ plot.plot_name or 'Plot ' ~ plot.plot_no }}</h1>
+    <p>{{ plot.location }} · {{ plot.land_area | num }} acres · {{ plot.season }}</p>
+  </div>
+  <div class="actions">
+    <a class="btn btn-secondary" href="{{ url_for('farmer.farm_edit', plot_no=plot.plot_no) }}">Edit details</a>
+  </div>
+</div>
+
+<div class="layout-side">
+  <div>
+    <div class="card">
+      <div class="card-head"><h2>Request a crop recommendation</h2></div>
+      {% if missing %}
+        <div class="notice warn">
+          <strong>Some details are missing</strong>
+          Add {{ missing | join(', ') }} to this plot before requesting a recommendation.
+        </div>
+        <div class="actions" style="margin-top: 16px">
+          <a class="btn btn-primary" href="{{ url_for('farmer.farm_edit', plot_no=plot.plot_no) }}">Add missing details</a>
+        </div>
+      {% else %}
+        <p class="muted">CropAdvisor will look up {{ plot.season }} weather for {{ plot.location }}, combine it with your
+          soil values and rank the crops that fit best. This usually takes a few seconds.</p>
+        <form method="post" action="{{ url_for('farmer.request_recommendation', plot_no=plot.plot_no) }}" data-busy="Generating recommendation…">
+          {{ csrf() }}
+          <button class="btn btn-primary" type="submit">Request crop recommendation</button>
+        </form>
+      {% endif %}
+    </div>
+
+    <div class="card tight">
+      <div class="card-head"><h2>Earlier results for this plot</h2></div>
+      {% if history %}
+        <div class="table-wrap" style="margin-top: 12px">
+          <table class="table">
+            <thead><tr><th>Date</th><th>Top crop</th><th>Confidence</th><th></th></tr></thead>
+            <tbody>
+              {% for h in history %}
+              <tr>
+                <td>{{ h.generated_date | datefmt }}</td>
+                <td><strong>{{ h.crop_name }}</strong></td>
+                <td>{{ h.suitability_score | pct }} {% if h.status == 'low-confidence' %}<span class="badge warn">low</span>{% endif %}</td>
+                <td class="num"><a href="{{ url_for('farmer.recommendation', rec_id=h.rec_id) }}">Open</a></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="muted" style="padding: 12px 20px 20px; margin: 0">No recommendations for this plot yet.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <aside>
+    <div class="card">
+      <h3>Farm and soil</h3>
+      <dl class="kv">
+        <dt>Location</dt><dd>{{ plot.location }}</dd>
+        <dt>Land area</dt><dd>{{ plot.land_area | num }} acres</dd>
+        <dt>Season</dt><dd>{{ plot.season }}</dd>
+        <dt>Soil type</dt><dd>{{ plot.soil_type or '—' }}</dd>
+        <dt>Nitrogen</dt><dd>{{ plot.n | num }}</dd>
+        <dt>Phosphorus</dt><dd>{{ plot.p | num }}</dd>
+        <dt>Potassium</dt><dd>{{ plot.k | num }}</dd>
+        <dt>pH</dt><dd>{{ plot.ph | num }}</dd>
+      </dl>
+      <p class="small faint" style="margin: 14px 0 0">{{ season_info[plot.season] }}.</p>
+    </div>
+    {% if soil %}
+    <div class="card">
+      <h3>{{ soil.name }} soil</h3>
+      <p class="small muted">{{ soil.description }}</p>
+      <p class="small faint" style="margin: 0">Typical N:P:K {{ soil.typical_n | num }}:{{ soil.typical_p | num }}:{{ soil.typical_k | num }},
+        pH {{ soil.typical_ph | num }}, drainage {{ soil.drainage | lower }}.</p>
+    </div>
+    {% endif %}
+    <form method="post" action="{{ url_for('farmer.farm_delete', plot_no=plot.plot_no) }}"
+          data-confirm="Remove this plot? Earlier recommendations stay in your history." style="margin-top: 20px">
+      {{ csrf() }}
+      <button class="btn btn-danger btn-sm" type="submit">Remove plot</button>
+    </form>
+  </aside>
+</div>
+{% endblock %}

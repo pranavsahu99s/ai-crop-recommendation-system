@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Recommendation history{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <span class="eyebrow">History</span>
+    <h1>Recommendation history</h1>
+    <p>Every result is saved with the inputs and weather that produced it.</p>
+  </div>
+</div>
+
+{% if rows %}
+  <div class="card tight">
+    <div class="table-wrap">
+      <table class="table">
+        <thead><tr><th>Date</th><th>Plot</th><th>Season · soil</th><th>Recommended crops</th><th>Confidence</th><th></th></tr></thead>
+        <tbody>
+          {% for r in rows %}
+            {% set inp = r.input_snapshot | fromjson %}
+            <tr>
+              <td class="nowrap">{{ r.generated_date | datefmt }}</td>
+              <td>{{ inp.plot_name or inp.location }}<div class="small faint">{{ inp.location }}</div></td>
+              <td class="nowrap">{{ inp.season }} · {{ inp.soil_type }}</td>
+              <td>{{ r.crops }}</td>
+              <td class="nowrap">{{ r.confidence_score | pct }} {% if r.status == 'low-confidence' %}<span class="badge warn">low</span>{% endif %}</td>
+              <td class="num nowrap">
+                <a href="{{ url_for('farmer.recommendation', rec_id=r.rec_id) }}">Open</a> ·
+                <a href="{{ url_for('farmer.download', rec_id=r.rec_id) }}">PDF</a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+{% else %}
+  <div class="card empty">
+    <h3>No recommendations yet</h3>
+    <p>Request one from any plot with complete soil details.</p>
+    <a class="btn btn-primary" href="{{ url_for('farmer.farms') }}">Go to my farms</a>
+  </div>
+{% endif %}
+{% endblock %}

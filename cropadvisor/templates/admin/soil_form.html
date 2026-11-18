@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% from "_forms.html" import csrf, field, select %}
+{% block title %}{{ 'Edit ' ~ soil.name if soil else 'Add soil type' }}{% endblock %}
+{% block width %}medium{% endblock %}
+{% block content %}
+<div class="breadcrumb"><a href="{{ url_for('admin.soils') }}">Soil data</a> / {{ soil.name if soil else 'New soil type' }}</div>
+<div class="page-head"><div><h1>{{ 'Edit ' ~ soil.name if soil else 'Add soil type' }}</h1></div></div>
+
+<form class="card" method="post" novalidate>
+  {{ csrf() }}
+  <div class="form-grid">
+    {{ field('name', 'Name', form, errors) }}
+    {{ select('drainage', 'Drainage', drainage, form, errors) }}
+    <div class="field full">
+      <label for="description">Description <span class="optional">(optional)</span></label>
+      <textarea class="input" id="description" name="description" maxlength="300">{{ form.get('description') or '' }}</textarea>
+    </div>
+  </div>
+  <div class="form-grid cols-4" style="margin-top: 16px">
+    {% for name, label, low, high in fields %}
+      {{ field(name, label, form, errors, type='text', attrs={'inputmode': 'decimal'}) }}
+    {% endfor %}
+  </div>
+  <div class="actions" style="margin-top: 24px">
+    <button class="btn btn-primary" type="submit">Save soil type</button>
+    <a class="btn btn-ghost" href="{{ url_for('admin.soils') }}">Cancel</a>
+  </div>
+</form>
+{% endblock %}

@@ -1,0 +1,8 @@
+venv/
+instance/
+__pycache__/
+*.pyc
+*.db
+previous_version_backup.tar.gz
+.vercel/
+.env*

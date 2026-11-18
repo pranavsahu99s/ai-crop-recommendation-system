@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% from "_forms.html" import csrf, field %}
+{% block title %}Register{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <h1>Create a farmer account</h1>
+  <p class="muted">You will log in with your mobile number.</p>
+  <div class="card">
+    <form method="post" novalidate>
+      {{ csrf() }}
+      <div class="grid" style="gap: 14px">
+        {{ field('name', 'Full name', form, errors, attrs={'autocomplete': 'name', 'required': 'required'}) }}
+        {{ field('contact_no', 'Contact number', form, errors, type='tel', hint='10-digit mobile number',
+                 attrs={'inputmode': 'numeric', 'autocomplete': 'tel', 'required': 'required', 'maxlength': '13'}) }}
+        {{ field('location', 'Village / district', form, errors, hint='Used as the default location for your plots',
+                 attrs={'required': 'required'}) }}
+        {{ field('password', 'Password', form, errors, type='password', hint='At least 6 characters',
+                 attrs={'autocomplete': 'new-password', 'required': 'required'}) }}
+        {{ field('confirm', 'Confirm password', form, errors, type='password', attrs={'autocomplete': 'new-password', 'required': 'required'}) }}
+      </div>
+      <button class="btn btn-primary btn-block" type="submit" style="margin-top: 20px">Create account</button>
+    </form>
+    <p class="small muted" style="margin: 16px 0 0">Already registered? <a href="{{ url_for('auth.login') }}">Log in</a></p>
+  </div>
+</div>
+{% endblock %}

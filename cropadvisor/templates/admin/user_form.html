@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% from "_forms.html" import csrf, field, select %}
+{% block title %}Edit {{ farmer.name }}{% endblock %}
+{% block width %}medium{% endblock %}
+{% block content %}
+<div class="breadcrumb"><a href="{{ url_for('admin.users') }}">Users</a> / {{ farmer.name }}</div>
+<div class="page-head">
+  <div>
+    <h1>{{ farmer.name }}</h1>
+    <p>Farmer #{{ farmer.farmer_id }} · {{ plots }} plot{{ '' if plots == 1 else 's' }} · {{ recs }} recommendation{{ '' if recs == 1 else 's' }}</p>
+  </div>
+</div>
+
+<form class="card" method="post" novalidate>
+  {{ csrf() }}
+  <div class="form-grid">
+    {{ field('name', 'Full name', form, errors) }}
+    {{ field('contact_no', 'Contact number', form, errors, type='tel', hint='Also the login for this farmer') }}
+    {{ field('location', 'Location', form, errors) }}
+    {{ select('status', 'Account status', ['active', 'disabled'], form, errors, hint='Disabled farmers cannot log in') }}
+  </div>
+  <div class="actions" style="margin-top: 24px">
+    <button class="btn btn-primary" type="submit">Save changes</button>
+    <a class="btn btn-ghost" href="{{ url_for('admin.users') }}">Cancel</a>
+  </div>
+</form>
+
+<div class="card">
+  <h3>Delete account</h3>
+  <p class="small muted">Deletes the farmer together with all of their plots and recommendations. This cannot be undone.</p>
+  <form method="post" action="{{ url_for('admin.user_delete', farmer_id=farmer.farmer_id) }}"
+        data-confirm="Delete {{ farmer.name }} and all of their farm records?">
+    {{ csrf() }}
+    <button class="btn btn-danger btn-sm" type="submit">Delete farmer</button>
+  </form>
+</div>
+{% endblock %}

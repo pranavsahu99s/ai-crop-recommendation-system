@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% from "_forms.html" import csrf, meter %}
+{% block title %}System reports{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <span class="eyebrow">Administrator</span>
+    <h1>System reports</h1>
+    <p>Usage, model status and recent activity.</p>
+  </div>
+</div>
+
+<div class="grid grid-4">
+  <div class="stat"><div class="label">Farmers</div><div class="value">{{ stats.farmers }}</div><div class="sub">{{ stats.active_farmers }} active</div></div>
+  <div class="stat"><div class="label">Farm plots</div><div class="value">{{ stats.plots }}</div><div class="sub">across all farmers</div></div>
+  <div class="stat"><div class="label">Recommendations</div><div class="value">{{ stats.recommendations }}</div><div class="sub">{{ stats.low_confidence }} low-confidence</div></div>
+  <div class="stat"><div class="label">Knowledge base</div><div class="value">{{ stats.crops }}</div><div class="sub">active crops · {{ stats.soils }} soil types</div></div>
+</div>
+
+<div class="grid grid-2 section-gap">
+  <div class="card">
+    <div class="card-head"><h2>Most recommended crops</h2></div>
+    {% if top_crops %}
+      {% set peak = top_crops[0].n %}
+      <ul class="bar-list">
+        {% for c in top_crops %}
+          <li><span>{{ c.crop_name }}</span>{{ meter(c.n / peak) }}<span class="n">{{ c.n }}</span></li>
+        {% endfor %}
+      </ul>
+    {% else %}<p class="muted">No recommendations yet.</p>{% endif %}
+    {% if by_season %}
+      <h3 style="margin-top: 22px">By season</h3>
+      <ul class="bar-list">
+        {% set speak = by_season[0].n %}
+        {% for s in by_season %}<li><span>{{ s.season }}</span>{{ meter(s.n / speak, 'brown') }}<span class="n">{{ s.n }}</span></li>{% endfor %}
+      </ul>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2>Recommendation model</h2></div>
+    <dl class="kv">
+      <dt>Algorithm</dt><dd>{{ model_info.algorithm }}</dd>
+      <dt>Version</dt><dd class="mono">{{ model_info.version }}</dd>
+      <dt>Trained</dt><dd>{{ model_info.trained_at }}</dd>
+      <dt>Training data</dt><dd>{{ model_info.dataset }}</dd>
+      <dt>Crops (classes)</dt><dd>{{ model_info.classes }}</dd>
+      <dt>Weather</dt><dd>{{ stats.weather_live }} measured · {{ stats.weather_estimate }} estimated</dd>
+    </dl>
+    <p class="small faint" style="margin: 14px 0">The model retrains automatically when crop or soil data changes.</p>
+    <form method="post" action="{{ url_for('admin.retrain_model') }}">
+      {{ csrf() }}
+      <button class="btn btn-secondary btn-sm" type="submit">Retrain now</button>
+    </form>
+  </div>
+</div>
+
+<div class="card section-gap">
+  <div class="card-head"><h2>Recent activity</h2></div>
+  {% if activity %}
+    <ul class="log-list">
+      {% for a in activity %}
+        <li><span class="faint small nowrap">{{ a.created_at | datefmt('%d %b, %H:%M') }}</span>
+            <span><strong>{{ a.action | capitalize }}</strong> · {{ a.actor }}{% if a.detail %} <span class="muted">— {{ a.detail }}</span>{% endif %}</span></li>
+      {% endfor %}
+    </ul>
+  {% else %}<p class="muted">No activity recorded yet.</p>{% endif %}
+</div>
+{% endblock %}

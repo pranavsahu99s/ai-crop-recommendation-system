@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}My farms{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <span class="eyebrow">Farm details</span>
+    <h1>My farms</h1>
+    <p>Each plot keeps its own location, season and soil values.</p>
+  </div>
+  <a class="btn btn-primary" href="{{ url_for('farmer.farm_new') }}">Add a plot</a>
+</div>
+
+{% if plots %}
+  <div class="grid grid-3">
+    {% for p in plots %}
+      <div class="card plot-card">
+        <div class="title">
+          <h3>{{ p.plot_name or 'Plot ' ~ p.plot_no }}</h3>
+          <span class="small faint mono">#{{ p.plot_no }}</span>
+        </div>
+        <div class="muted small">{{ p.location }} · {{ p.land_area | num }} acres</div>
+        <div class="facts">
+          <span class="badge green">{{ p.season }}</span>
+          {% if p.soil_type %}<span class="badge brown">{{ p.soil_type }}</span>{% endif %}
+          <span class="badge">NPK {{ p.get_npk_values() }}</span>
+          <span class="badge">pH {{ p.ph | num }}</span>
+        </div>
+        {% set missing = p.missing_for_recommendation() %}
+        {% if missing %}<div class="small" style="color: var(--warn)">Missing: {{ missing | join(', ') }}</div>{% endif %}
+        <div class="actions">
+          <a class="btn btn-secondary btn-sm" href="{{ url_for('farmer.farm_detail', plot_no=p.plot_no) }}">Open</a>
+          <a class="btn btn-ghost btn-sm" href="{{ url_for('farmer.farm_edit', plot_no=p.plot_no) }}">Edit</a>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="card empty">
+    <h3>No plots yet</h3>
+    <p>Add your first plot to get a crop recommendation.</p>
+    <a class="btn btn-primary" href="{{ url_for('farmer.farm_new') }}">Add a plot</a>
+  </div>
+{% endif %}
+{% endblock %}

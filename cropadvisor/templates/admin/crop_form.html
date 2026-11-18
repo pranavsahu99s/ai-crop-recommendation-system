@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% from "_forms.html" import csrf, field, select %}
+{% block title %}{{ 'Edit ' ~ crop.crop_name if crop else 'Add crop' }}{% endblock %}
+{% block width %}medium{% endblock %}
+{% block content %}
+<div class="breadcrumb"><a href="{{ url_for('admin.crops') }}">Crop data</a> / {{ crop.crop_name if crop else 'New crop' }}</div>
+<div class="page-head">
+  <div>
+    <h1>{{ 'Edit ' ~ crop.crop_name if crop else 'Add crop' }}</h1>
+    <p>Saving retrains the recommendation model with this data.</p>
+  </div>
+</div>
+
+{% if errors %}<div class="flash flash-error" role="alert">Please correct the highlighted fields.</div>{% endif %}
+
+<form class="card" method="post" novalidate>
+  {{ csrf() }}
+  <fieldset class="fieldset">
+    <legend>Crop</legend>
+    <div class="form-grid" style="margin-top: 12px">
+      {{ field('crop_name', 'Crop name', form, errors) }}
+      {{ select('category', 'Category', categories, form, errors) }}
+      <div class="field full {{ 'has-error' if errors.seasons }}">
+        <span class="label">Seasons</span>
+        <div class="checks">
+          {% for s in seasons %}<label class="check"><input type="checkbox" name="seasons" value="{{ s }}" {{ 'checked' if s in form.season_list }}> {{ s }}</label>{% endfor %}
+        </div>
+        {% if errors.seasons %}<span class="error-text">{{ errors.seasons }}</span>{% endif %}
+      </div>
+      <div class="field full {{ 'has-error' if errors.soil_category }}">
+        <span class="label">Suitable soil types</span>
+        <div class="checks">
+          {% for s in soil_names %}<label class="check"><input type="checkbox" name="soil_category" value="{{ s }}" {{ 'checked' if s in form.soil_list }}> {{ s }}</label>{% endfor %}
+        </div>
+        {% if errors.soil_category %}<span class="error-text">{{ errors.soil_category }}</span>{% endif %}
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset class="fieldset">
+    <legend>Climate</legend>
+    <p class="lead">Season averages. Rainfall is mean monthly rainfall during the growing season.</p>
+    <div class="form-grid">
+      {% for name, label, low, high, required, default in numeric[:6] %}
+        {{ field(name, label, form, errors, type='text', attrs={'inputmode': 'decimal'}, optional=not required) }}
+      {% endfor %}
+    </div>
+  </fieldset>
+
+  <fieldset class="fieldset">
+    <legend>Soil nutrients</legend>
+    <p class="lead">Preferred ranges in kg/ha, and soil pH.</p>
+    <div class="form-grid cols-4">
+      {% for name, label, low, high, required, default in numeric[6:14] %}
+        {{ field(name, label, form, errors, type='text', attrs={'inputmode': 'decimal'}) }}
+      {% endfor %}
+    </div>
+  </fieldset>
+
+  <fieldset class="fieldset">
+    <legend>Growing notes</legend>
+    <div class="form-grid" style="margin-top: 12px">
+      {{ select('water_need', 'Water need', water, form, errors) }}
+      {{ field('duration_days', 'Duration (days)', form, errors, type='text', optional=True, attrs={'inputmode': 'numeric'}) }}
+      <div class="field full">
+        <label for="guidance">Guidance shown to farmers <span class="optional">(optional)</span></label>
+        <textarea class="input" id="guidance" name="guidance" maxlength="600">{{ form.get('guidance') or '' }}</textarea>
+      </div>
+    </div>
+  </fieldset>
+
+  <div class="actions" style="margin-top: 24px">
+    <button class="btn btn-primary" type="submit">Save crop</button>
+    <a class="btn btn-ghost" href="{{ url_for('admin.crops') }}">Cancel</a>
+  </div>
+</form>
+{% endblock %}

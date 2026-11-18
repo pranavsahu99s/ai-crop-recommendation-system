@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% from "_forms.html" import meter %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <span class="eyebrow">Dashboard</span>
+    <h1>Namaste, {{ farmer.name.split(' ')[0] }}</h1>
+    <p>{{ farmer.location }} · {{ plots | length }} plot{{ '' if plots | length == 1 else 's' }} · {{ total }} recommendation{{ '' if total == 1 else 's' }}</p>
+  </div>
+  <a class="btn btn-primary" href="{{ url_for('farmer.farm_new') }}">Add a plot</a>
+</div>
+
+<div class="layout-side">
+  <div>
+    <div class="card tight">
+      <div class="card-head">
+        <h2>Recent recommendations</h2>
+        {% if recent %}<a href="{{ url_for('farmer.history') }}" class="small">View all</a>{% endif %}
+      </div>
+      {% if recent %}
+        <div class="table-wrap" style="margin-top: 12px">
+          <table class="table">
+            <thead><tr><th>Date</th><th>Plot</th><th>Top crop</th><th>Confidence</th><th></th></tr></thead>
+            <tbody>
+            {% for r in recent %}
+              {% set inp = r.input_snapshot | fromjson %}
+              <tr>
+                <td class="nowrap">{{ r.generated_date | datefmt('%d %b %Y') }}</td>
+                <td>{{ inp.plot_name or inp.location }}<div class="small faint">{{ inp.season }} · {{ inp.soil_type }}</div></td>
+                <td><strong>{{ r.crop_name }}</strong></td>
+                <td style="min-width: 130px">
+                  {{ r.confidence_score | pct }}
+                  {% if r.status == 'low-confidence' %}<span class="badge warn">low</span>{% endif %}
+                </td>
+                <td class="num"><a href="{{ url_for('farmer.recommendation', rec_id=r.rec_id) }}">Open</a></td>
+              </tr>
+            {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty">
+          <h3>No recommendations yet</h3>
+          <p>Add a plot with its soil values, then request a recommendation from the plot page.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <aside>
+    <div class="card">
+      <div class="card-head"><h3>Your plots</h3><a class="small" href="{{ url_for('farmer.farms') }}">Manage</a></div>
+      {% if plots %}
+        <ul class="rank-list">
+        {% for p in plots %}
+          <li style="grid-template-columns: 1fr auto">
+            <div>
+              <a href="{{ url_for('farmer.farm_detail', plot_no=p.plot_no) }}"><strong>{{ p.plot_name or 'Plot ' ~ p.plot_no }}</strong></a>
+              <div class="small faint">{{ p.location }} · {{ p.land_area | num }} ac · {{ p.season }}</div>
+            </div>
+            {% if p.missing_for_recommendation() %}
+              <span class="badge brown">needs soil data</span>
+            {% else %}
+              <span class="badge green">ready</span>
+            {% endif %}
+          </li>
+        {% endfor %}
+        </ul>
+      {% else %}
+        <p class="muted small" style="margin: 0">No plots saved yet.</p>
+      {% endif %}
+    </div>
+    <div class="card">
+      <h3>Before you start</h3>
+      <p class="small muted" style="margin: 0">Keep your soil health card ready. You need nitrogen (N), phosphorus (P),
+        potassium (K) and pH. If you don't have a test, the form can fill typical values for your soil type.</p>
+    </div>
+  </aside>
+</div>
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% from "_forms.html" import csrf %}
+{% block title %}Profile{% endblock %}
+{% block width %}medium{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div>
+    <span class="eyebrow">Profile</span>
+    <h1>Your profile</h1>
+    <p>Registered {{ farmer.created_at | datefmt('%d %b %Y') }}</p>
+  </div>
+</div>
+
+<form class="card" method="post" novalidate>
+  {{ csrf() }}
+  <fieldset class="fieldset">
+    <legend>Personal details</legend>
+    <div class="form-grid" style="margin-top: 12px">
+      <div class="field {{ 'has-error' if errors.name }}">
+        <label for="name">Full name</label>
+        <input class="input" id="name" name="name" value="{{ form.get('name', farmer.name) }}">
+        {% if errors.name %}<span class="error-text">{{ errors.name }}</span>{% endif %}
+      </div>
+      <div class="field {{ 'has-error' if errors.location }}">
+        <label for="location">Village / district</label>
+        <input class="input" id="location" name="location" value="{{ form.get('location', farmer.location) }}">
+        {% if errors.location %}<span class="error-text">{{ errors.location }}</span>{% endif %}
+      </div>
+      <div class="field">
+        <span class="label">Contact number</span>
+        <input class="input" value="{{ farmer.contact_no }}" disabled>
+        <span class="hint">This is your login. Ask the administrator to change it.</span>
+      </div>
+    </div>
+  </fieldset>
+  <fieldset class="fieldset">
+    <legend>Change password</legend>
+    <p class="lead">Leave blank to keep your current password.</p>
+    <div class="form-grid">
+      <div class="field {{ 'has-error' if errors.current_password }}">
+        <label for="current_password">Current password</label>
+        <input class="input" id="current_password" name="current_password" type="password" autocomplete="current-password">
+        {% if errors.current_password %}<span class="error-text">{{ errors.current_password }}</span>{% endif %}
+      </div>
+      <div class="field {{ 'has-error' if errors.new_password }}">
+        <label for="new_password">New password</label>
+        <input class="input" id="new_password" name="new_password" type="password" autocomplete="new-password">
+        {% if errors.new_password %}<span class="error-text">{{ errors.new_password }}</span>{% endif %}
+      </div>
+    </div>
+  </fieldset>
+  <div class="actions" style="margin-top: 24px">
+    <button class="btn btn-primary" type="submit">Save changes</button>
+  </div>
+</form>
+{% endblock %}

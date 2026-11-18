@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% from "_forms.html" import csrf, field, select %}
+{% block title %}{{ 'Edit plot' if plot else 'Add a plot' }}{% endblock %}
+{% block width %}medium{% endblock %}
+{% block content %}
+<div class="breadcrumb">
+  <a href="{{ url_for('farmer.farms') }}">My farms</a>
+  {% if plot %} / <a href="{{ url_for('farmer.farm_detail', plot_no=plot.plot_no) }}">{{ plot.plot_name or 'Plot ' ~ plot.plot_no }}</a>{% endif %}
+</div>
+<div class="page-head">
+  <div>
+    <h1>{{ 'Edit plot' if plot else 'Add a plot' }}</h1>
+    <p>Soil values can be added now or later. All four are needed before a recommendation.</p>
+  </div>
+</div>
+
+{% if errors %}<div class="flash flash-error" role="alert">Please correct the highlighted fields.</div>{% endif %}
+
+<form class="card" method="post" enctype="multipart/form-data" novalidate>
+  {{ csrf() }}
+  <fieldset class="fieldset">
+    <legend>Farm details</legend>
+    <p class="lead">Where the plot is and when you plan to sow.</p>
+    <div class="form-grid">
+      {{ field('plot_name', 'Plot name', form, errors, optional=True, hint='For example "Near the well" or "North field"') }}
+      {{ field('location', 'Location', form, errors, hint='Village, town or district — used to look up weather',
+               attrs={'required': 'required'}) }}
+      {{ field('land_area', 'Land area (acres)', form, errors, type='number', attrs={'step': '0.01', 'min': '0.01', 'required': 'required'}) }}
+      <div class="field {{ 'has-error' if errors.get('season') }}">
+        <label for="season">Cultivation season</label>
+        <select class="input" id="season" name="season">
+          <option value="">Choose season</option>
+          {% for s in seasons %}<option value="{{ s }}" {{ 'selected' if form.get('season') == s }}>{{ s }} — {{ season_info[s].split(',')[0] }}</option>{% endfor %}
+        </select>
+        {% if errors.get('season') %}<span class="error-text">{{ errors.season }}</span>{% endif %}
+      </div>
+    </div>
+  </fieldset>
+
+  <fieldset class="fieldset">
+    <legend>Soil information</legend>
+    <p class="lead">Enter the values from your soil health card, or upload the report as a CSV or text file.</p>
+    <div class="form-grid">
+      <div class="field full {{ 'has-error' if errors.get('soil_type') }}">
+        <label for="soil_type">Soil type</label>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap">
+          <select class="input" id="soil_type" name="soil_type" style="flex: 1; min-width: 200px">
+            <option value="">Choose soil type</option>
+            {% for s in soils %}<option value="{{ s.name }}" {{ 'selected' if form.get('soil_type') == s.name }}>{{ s.name }}</option>{% endfor %}
+          </select>
+          <button type="button" class="btn btn-secondary" id="fill-typical">Fill typical values</button>
+        </div>
+        {% if errors.get('soil_type') %}<span class="error-text">{{ errors.soil_type }}</span>
+        {% else %}<span class="hint" id="fill-note" hidden>Typical values were filled into empty fields. Replace them with your soil test if you have one.</span>{% endif %}
+      </div>
+    </div>
+    <div class="form-grid cols-4" style="margin-top: 16px">
+      {{ field('n', 'Nitrogen (N)', form, errors, type='text', hint='kg/ha, 0–300', attrs={'inputmode': 'decimal'}) }}
+      {{ field('p', 'Phosphorus (P)', form, errors, type='text', hint='kg/ha, 0–300', attrs={'inputmode': 'decimal'}) }}
+      {{ field('k', 'Potassium (K)', form, errors, type='text', hint='kg/ha, 0–300', attrs={'inputmode': 'decimal'}) }}
+      {{ field('ph', 'Soil pH', form, errors, type='text', hint='0–14', attrs={'inputmode': 'decimal'}) }}
+    </div>
+    <div class="field {{ 'has-error' if errors.get('soil_report') }}" style="margin-top: 16px">
+      <label for="soil_report">Upload soil report <span class="optional">(optional)</span></label>
+      <input class="input" type="file" id="soil_report" name="soil_report" accept=".csv,.txt,text/csv,text/plain">
+      {% if errors.get('soil_report') %}<span class="error-text">{{ errors.soil_report }}</span>
+      {% else %}<span class="hint">Values found in the file replace the fields above.
+        <a href="{{ url_for('static', filename='samples/soil_report_sample.csv') }}" download>Sample file</a></span>{% endif %}
+    </div>
+  </fieldset>
+
+  <div class="actions" style="margin-top: 28px">
+    <button class="btn btn-primary" type="submit">Save farm details</button>
+    <a class="btn btn-ghost" href="{{ url_for('farmer.farm_detail', plot_no=plot.plot_no) if plot else url_for('farmer.farms') }}">Cancel</a>
+  </div>
+</form>
+
+<script type="application/json" id="soil-data">{{ soil_map | tojson }}</script>
+{% endblock %}
